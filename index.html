@@ -1,602 +1,862 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { 
-  BookOpen, 
-  Search, 
-  Settings, 
-  Shuffle, 
-  FileText, 
-  ChevronLeft, 
-  ChevronRight, 
-  Trash2, 
-  Copy, 
-  Moon, 
-  Sun, 
-  Upload, 
-  Download,
-  Plus,
-  Edit3,
-  Check,
-  AlertCircle,
-  X
-} from 'lucide-react';
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>中醫醫案閱讀器</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
+    <style>
+      /* 確保 App 佔滿整個視窗 */
+      #root {
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
 
-// --- 初始資料 ---
-const INITIAL_CASES = [
-  { id: '1', title: '範例：感冒案', content: '患者：張某\n主訴：惡風寒...\n(這是範例，請嘗試匯入功能)', date: '2023-01-10' },
-];
+    <script type="text/babel">
+        // 為了讓程式碼在獨立 HTML 中運行，我們需要從 CDN 引用 lucide-react 的元件。
+        // 請注意：在獨立 HTML 中，我們不能使用 import 語句，而必須直接使用全局變數。
+        // 然而，lucide-react 沒有提供一個簡單的全局 CDN 連結來直接暴露所有元件。
+        // 因此，我將所有用到的 lucide-react 元件程式碼直接貼在下面，模擬其功能。
 
-export default function App() {
-  // --- 狀態管理 ---
-  const [activeTab, setActiveTab] = useState('cases');
-  const [cases, setCases] = useState(() => {
-    try {
-      const saved = localStorage.getItem('tcm_cases');
-      return saved ? JSON.parse(saved) : INITIAL_CASES;
-    } catch(e) { return INITIAL_CASES; }
-  });
-  const [notes, setNotes] = useState(() => {
-    try {
-      const saved = localStorage.getItem('tcm_notes');
-      return saved ? JSON.parse(saved) : [];
-    } catch(e) { return []; }
-  });
-  
-  const [darkMode, setDarkMode] = useState(false);
-  const [fontSize, setFontSize] = useState(18);
-  
-  const [viewMode, setViewMode] = useState('list');
-  const [currentId, setCurrentId] = useState(null);
-  const [navigationQueue, setNavigationQueue] = useState([]); 
-  const [contextSource, setContextSource] = useState('database'); 
+        // 模擬 lucide-react 元件
+        const Icon = ({ children, size = 24, color = "currentColor", strokeWidth = 2, ...props }) => (
+            <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width={size}
+                height={size}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke={color}
+                strokeWidth={strokeWidth}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                {...props}
+            >
+                {children}
+            </svg>
+        );
 
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
+        const BookOpen = (props) => (
+            <Icon {...props}><path d="M2 19.5V4a2 2 0 0 1 2-2h10l6 6v11.5a2.5 2.5 0 0 1-5 0A2.5 2.5 0 0 1 12 19.5a2.5 2.5 0 0 1-5 0A2.5 2.5 0 0 1 2 19.5Z" /><path d="M7 2h7" /><path d="M12 2v7" /><path d="M14 9h6" /></Icon>
+        );
+        const Search = (props) => (
+            <Icon {...props}><circle cx="11" cy="11" r="8" /><line x1="21" x2="16.65" y1="21" y1="16.65" /></Icon>
+        );
+        const Settings = (props) => (
+            <Icon {...props}><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 0-2 0l-.15-.08a2 2 0 0 0-2.73 2.73l.08.15a2 2 0 0 0 0 2l-.25.43a2 2 0 0 0 0 2h-.18a2 2 0 0 0-2 2v.44a2 2 0 0 0 2 2h.18a2 2 0 0 1 1.73 1l.25.43a2 2 0 0 0 2 0l.15-.08a2 2 0 0 0 2.73 2.73l.08.15a2 2 0 0 0 2 0l.43-.25a2 2 0 0 0 2 0l.43.25a2 2 0 0 0 2 0l.15-.08a2 2 0 0 0 2.73 2.73l.08.15a2 2 0 0 0 2 0l.43-.25a2 2 0 0 0 2 0v-.18a2 2 0 0 0 2-2v-.44a2 2 0 0 0-2-2h-.18a2 2 0 0 1-1.73-1l-.25-.43a2 2 0 0 0 0-2l.25-.43a2 2 0 0 0 0-2l-.43-.25a2 2 0 0 0-2-2h-.18a2 2 0 0 0-2-2v-.44a2 2 0 0 0-2-2Zm.01 13a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z" /></Icon>
+        );
+        const Shuffle = (props) => (
+            <Icon {...props}><path d="M16 3h5v5" /><path d="M4 20L21 3" /><path d="M21 16v5h-5" /><path d="M15 15l6 6" /><path d="M4 4l5 5" /></Icon>
+        );
+        const FileText = (props) => (
+            <Icon {...props}><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" /><polyline points="14 2 14 8 20 8" /><line x1="16" x2="8" y1="13" y1="13" /><line x1="16" x2="8" y1="17" y1="17" /><line x1="10" x2="8" y1="9" y1="9" /></Icon>
+        );
+        const ChevronLeft = (props) => (
+            <Icon {...props}><path d="M15 18l-6-6 6-6" /></Icon>
+        );
+        const ChevronRight = (props) => (
+            <Icon {...props}><path d="M9 18l6-6-6-6" /></Icon>
+        );
+        const Trash2 = (props) => (
+            <Icon {...props}><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /><line x1="10" x2="10" y1="11" y1="17" /><line x1="14" x2="14" y1="11" y1="17" /></Icon>
+        );
+        const Copy = (props) => (
+            <Icon {...props}><rect width="14" height="14" x="8" y="8" rx="2" ry="2" /><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" /></Icon>
+        );
+        const Upload = (props) => (
+            <Icon {...props}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" x2="12" y1="3" y1="15" /></Icon>
+        );
+        const Download = (props) => (
+            <Icon {...props}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" x2="12" y1="15" y1="3" /></Icon>
+        );
+        const Plus = (props) => (
+            <Icon {...props}><line x1="12" x2="12" y1="5" y1="19" /><line x1="5" x2="19" y1="12" y1="12" /></Icon>
+        );
+        const Edit3 = (props) => (
+            <Icon {...props}><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" /></Icon>
+        );
+        const Check = (props) => (
+            <Icon {...props}><polyline points="20 6 9 17 4 12" /></Icon>
+        );
+        const AlertCircle = (props) => (
+            <Icon {...props}><circle cx="12" cy="12" r="10" /><line x1="12" x2="12" y1="8" y1="12" /><line x1="12" x2="12.01" y1="16" y1="16" /></Icon>
+        );
+        const X = (props) => (
+            <Icon {...props}><line x1="18" x2="6" y1="6" y1="18" /><line x1="6" x2="18" y1="6" y1="18" /></Icon>
+        );
 
-  const [isEditing, setIsEditing] = useState(false);
-  const [editBuffer, setEditBuffer] = useState({}); 
-  
-  // 自定義 Modal 與 Notification 狀態
-  const [notification, setNotification] = useState(null); // { msg: string, type: 'success'|'error' }
-  const [modalConfig, setModalConfig] = useState(null); // { type: 'import'|'confirm', ...props }
-  
-  // 匯入專用狀態
-  const [pendingFile, setPendingFile] = useState(null);
-  // 這裡已修改為 '---'
-  const [separatorInput, setSeparatorInput] = useState('---');
-  const fileInputRef = useRef(null);
+        const { useState, useEffect, useRef } = React;
 
-  // --- Effects ---
-  useEffect(() => { localStorage.setItem('tcm_cases', JSON.stringify(cases)); }, [cases]);
-  useEffect(() => { localStorage.setItem('tcm_notes', JSON.stringify(notes)); }, [notes]);
-  useEffect(() => {
-    if (darkMode) document.documentElement.classList.add('dark');
-    else document.documentElement.classList.remove('dark');
-  }, [darkMode]);
+        // --- 初始資料 ---
+        const INITIAL_CASES = [
+          { id: '1', title: '範例：感冒案', content: '患者：張某\n主訴：惡風寒、頭痛、鼻塞、苔薄白\n脈象：浮緊\n方藥：桂枝湯加減\n(這是範例，請嘗試匯入功能)', date: '2023-01-10' },
+          { id: '2', title: '範例：胃痛案', content: '患者：李某\n主訴：胃脘脹痛、噯氣吞酸、舌紅苔黃膩\n脈象：弦滑\n方藥：柴胡疏肝散合左金丸加減', date: '2023-03-22' },
+          { id: '3', title: '範例：失眠案', content: '患者：王某\n主訴：入睡困難、多夢易醒、心煩口乾、舌尖紅\n脈象：細數\n方藥：天王補心丹加減', date: '2023-06-18' },
+        ];
 
-  // 自動關閉通知
-  useEffect(() => {
-    if (notification) {
-      const timer = setTimeout(() => setNotification(null), 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [notification]);
+        function App() {
+          // --- 狀態管理 ---
+          const [activeTab, setActiveTab] = useState('cases');
+          const [cases, setCases] = useState(() => {
+            try {
+              const saved = localStorage.getItem('tcm_cases');
+              return saved ? JSON.parse(saved) : INITIAL_CASES;
+            } catch(e) { return INITIAL_CASES; }
+          });
+          const [notes, setNotes] = useState(() => {
+            try {
+              const saved = localStorage.getItem('tcm_notes');
+              return saved ? JSON.parse(saved) : [];
+            } catch(e) { return []; }
+          });
+          
+          // 設定相關
+          const [darkMode, setDarkMode] = useState(() => {
+              try {
+                  return JSON.parse(localStorage.getItem('tcm_darkMode')) || false;
+              } catch { return false; }
+          });
+          const [fontSize, setFontSize] = useState(() => {
+              try {
+                  return Number(localStorage.getItem('tcm_fontSize')) || 18;
+              } catch { return 18; }
+          });
+          
+          const [viewMode, setViewMode] = useState('list');
+          const [currentId, setCurrentId] = useState(null);
+          const [navigationQueue, setNavigationQueue] = useState([]); 
+          const [contextSource, setContextSource] = useState('database'); 
 
-  // --- 核心功能 ---
+          const [searchQuery, setSearchQuery] = useState('');
+          const [searchResults, setSearchResults] = useState([]);
 
-  const showNotify = (msg, type = 'success') => {
-    setNotification({ msg, type });
-  };
+          const [isEditing, setIsEditing] = useState(false);
+          const [editBuffer, setEditBuffer] = useState({}); 
+          
+          // 自定義 Modal 與 Notification 狀態
+          const [notification, setNotification] = useState(null); // { msg: string, type: 'success'|'error' }
+          const [modalConfig, setModalConfig] = useState(null); // { type: 'import'|'confirm', ...props }
+          
+          // 匯入專用狀態
+          const [pendingFile, setPendingFile] = useState(null);
+          const [separatorInput, setSeparatorInput] = useState('===');
+          const fileInputRef = useRef(null);
 
-  // 1. 檔案讀取與前置處理
-  const handleFileSelect = (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
+          // --- Effects ---
+          useEffect(() => { localStorage.setItem('tcm_cases', JSON.stringify(cases)); }, [cases]);
+          useEffect(() => { localStorage.setItem('tcm_notes', JSON.stringify(notes)); }, [notes]);
+          useEffect(() => { localStorage.setItem('tcm_darkMode', JSON.stringify(darkMode)); 
+            if (darkMode) document.documentElement.classList.add('dark');
+            else document.documentElement.classList.remove('dark');
+          }, [darkMode]);
+          useEffect(() => { localStorage.setItem('tcm_fontSize', fontSize.toString()); }, [fontSize]);
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const content = e.target.result;
-      
-      // 判斷是否為備份檔 (JSON)
-      try {
-        const json = JSON.parse(content);
-        if (Array.isArray(json)) {
-          setModalConfig({
-            type: 'json_confirm',
-            data: json,
-            fileName: file.name
-          });
-          return;
-        }
-      } catch (err) {
-        // 不是 JSON，繼續
-      }
+          // 自動關閉通知
+          useEffect(() => {
+            if (notification) {
+              const timer = setTimeout(() => setNotification(null), 3000);
+              return () => clearTimeout(timer);
+            }
+          }, [notification]);
 
-      // 是一般文字檔，開啟匯入設定視窗
-      setPendingFile({ name: file.name, content });
-      // 這裡已修改為 '---'
-      setSeparatorInput('---'); // 重置預設值
-      setModalConfig({ type: 'import_settings' });
-    };
-    reader.readAsText(file);
-    event.target.value = ''; // 重置 input 以便重複選檔
-  };
+          // --- 核心功能 ---
 
-  // 2. 執行文字檔切割匯入
-  const executeTextImport = () => {
-    if (!pendingFile) return;
-    
-    const { content } = pendingFile;
-    const separator = separatorInput.trim();
-    let newCases = [];
-    let count = 0;
+          const showNotify = (msg, type = 'success') => {
+            setNotification({ msg, type });
+          };
 
-    if (separator) {
-       // 批次切割模式
-       const rawChunks = content.split(separator);
-       newCases = rawChunks.map((chunk, index) => {
-          const cleanChunk = chunk.trim();
-          if (cleanChunk.length === 0) return null;
-          
-          const lines = cleanChunk.split('\n');
-          let title = lines[0].trim();
-          if (title.length > 30) title = title.substring(0, 30) + "...";
-          if (title.length === 0) title = `匯入醫案 ${index + 1}`;
+          // 1. 檔案讀取與前置處理
+          const handleFileSelect = (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
 
-          const body = lines.length > 1 ? lines.slice(1).join('\n').trim() : cleanChunk;
-          
-          return {
-              id: Date.now() + Math.random().toString(36).substr(2, 9),
-              title: title,
-              content: body || cleanChunk,
-              date: new Date().toISOString().split('T')[0]
-          };
-       }).filter(c => c !== null);
-       count = newCases.length;
-    } else {
-       // 單一檔案模式
-       newCases = [{
-          id: Date.now().toString(),
-          title: pendingFile.name.replace('.txt', ''),
-          content: content,
-          date: new Date().toISOString().split('T')[0]
-       }];
-       count = 1;
-    }
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              const content = e.target.result;
+              
+              // 判斷是否為備份檔 (JSON)
+              try {
+                const json = JSON.parse(content);
+                // 檢查 JSON 結構是否符合醫案格式
+                const isCaseArray = Array.isArray(json) && (json.length === 0 || (json[0].id && json[0].title && json[0].content));
 
-    if (count > 0) {
-      setCases(prev => [...newCases, ...prev]);
-      showNotify(`成功匯入 ${count} 則醫案`);
-    } else {
-      showNotify('匯入失敗：找不到有效內容', 'error');
-    }
-    setModalConfig(null);
-    setPendingFile(null);
-  };
+                if (isCaseArray) {
+                  setModalConfig({
+                    type: 'json_confirm',
+                    data: json,
+                    fileName: file.name
+                  });
+                  return;
+                }
+              } catch (err) {
+                // 不是 JSON，繼續
+              }
 
-  // 3. 執行 JSON 合併
-  const executeJsonImport = (data) => {
-    setCases(prev => [...prev, ...data]);
-    showNotify(`已從備份還原/合併 ${data.length} 筆資料`);
-    setModalConfig(null);
-  };
+              // 是一般文字檔，開啟匯入設定視窗
+              setPendingFile({ name: file.name, content });
+              setSeparatorInput('==='); // 重置預設值
+              setModalConfig({ type: 'import_settings' });
+            };
+            reader.readAsText(file);
+            event.target.value = ''; // 重置 input 以便重複選檔
+          };
 
-  // 導航與搜尋
-  const handleSearch = (query, target = 'cases') => {
-    setSearchQuery(query);
-    if (!query.trim()) {
-      setSearchResults([]);
-      return;
-    }
-    const keywords = query.split(/\s+/);
-    const sourceData = target === 'notes' ? notes : cases;
-    
-    const results = sourceData.filter(c => {
-      const text = (c.title + c.content).toLowerCase();
-      return keywords.every(k => text.includes(k.toLowerCase()));
-    });
-    setSearchResults(results);
-  };
+          // 2. 執行文字檔切割匯入
+          const executeTextImport = () => {
+            if (!pendingFile) return;
+            
+            const { content } = pendingFile;
+            const separator = separatorInput.trim();
+            let newCases = [];
+            let count = 0;
 
-  const openItem = (id, sourceList, sourceName, mode = 'detail') => {
-    setCurrentId(id);
-    setNavigationQueue(sourceList.map(c => c.id));
-    setContextSource(sourceName);
-    setViewMode(mode);
-    setIsEditing(false);
-  };
+            // 確保內容不為空，且不是只有空白符
+            const cleanContent = content.trim();
+            if (cleanContent.length === 0) {
+              showNotify('匯入失敗：檔案內容為空', 'error');
+              setModalConfig(null);
+              setPendingFile(null);
+              return;
+            }
 
-  const navigateItem = (direction) => {
-    if (isEditing) {
-       setModalConfig({ 
-         type: 'confirm_nav', 
-         onConfirm: () => {
-            setIsEditing(false);
-            setModalConfig(null);
-            performNav(direction);
-         } 
-       });
-       return;
-    }
-    performNav(direction);
-  };
+            if (separator) {
+              // 批次切割模式
+              const rawChunks = content.split(separator);
+              newCases = rawChunks.map((chunk, index) => {
+                const cleanChunk = chunk.trim();
+                if (cleanChunk.length === 0) return null;
+                
+                const lines = cleanChunk.split('\n');
+                let title = lines[0].trim();
+                
+                // 嘗試從第一行獲取標題，如果第一行過長或空白，使用預設名稱
+                if (title.length > 30 || title.length === 0) {
+                    title = lines[0].substring(0, 30).trim();
+                }
+                if (title.length === 0) {
+                    title = `匯入醫案 ${index + 1}`;
+                }
 
-  const performNav = (direction) => {
-    const currentIndex = navigationQueue.indexOf(currentId);
-    if (currentIndex === -1) return;
-    let nextIndex = direction === 'next' 
-      ? (currentIndex + 1 < navigationQueue.length ? currentIndex + 1 : 0)
-      : (currentIndex - 1 >= 0 ? currentIndex - 1 : navigationQueue.length - 1);
-    setCurrentId(navigationQueue[nextIndex]);
-  };
+                // 內文是除第一行外的所有內容
+                const body = lines.length > 1 ? lines.slice(1).join('\n').trim() : cleanChunk;
+                
+                return {
+                    id: Date.now() + Math.random().toString(36).substr(2, 9),
+                    title: title,
+                    content: body || cleanChunk,
+                    date: new Date().toISOString().split('T')[0]
+                };
+              }).filter(c => c !== null);
+              count = newCases.length;
+            } else {
+              // 單一檔案模式
+              newCases = [{
+                id: Date.now().toString(),
+                title: pendingFile.name.replace(/\.txt|\.json/i, ''),
+                content: content,
+                date: new Date().toISOString().split('T')[0]
+              }];
+              count = 1;
+            }
 
-  const handleSaveEdit = () => {
-    const updater = (prev) => prev.map(c => c.id === currentId ? { ...c, ...editBuffer } : c);
-    if (activeTab === 'notes') setNotes(updater);
-    else setCases(updater);
-    
-    setIsEditing(false);
-    setModalConfig(null);
-    showNotify('儲存成功');
-  };
+            if (count > 0) {
+              setCases(prev => [...newCases, ...prev]);
+              showNotify(`成功匯入 ${count} 則醫案`);
+            } else {
+              showNotify('匯入失敗：找不到有效內容', 'error');
+            }
+            setModalConfig(null);
+            setPendingFile(null);
+          };
 
-  const handleDelete = () => {
-    setModalConfig({
-        type: 'confirm_delete',
-        onConfirm: () => {
-            if(activeTab==='notes') setNotes(prev => prev.filter(n => n.id !== currentId));
-            else setCases(prev => prev.filter(c => c.id !== currentId));
-            setViewMode('list');
-            setModalConfig(null);
-            showNotify('已刪除');
-        }
-    });
-  };
+          // 3. 執行 JSON 合併
+          const executeJsonImport = (data) => {
+            setCases(prev => [...prev, ...data]);
+            showNotify(`已從備份還原/合併 ${data.length} 筆資料`);
+            setModalConfig(null);
+          };
 
-  const createNote = () => {
-    const newNote = {
-      id: Date.now().toString(),
-      title: '新筆記',
-      content: '',
-      date: new Date().toISOString().split('T')[0]
-    };
-    setNotes([newNote, ...notes]);
-    openItem(newNote.id, [newNote, ...notes], 'notes', 'detail');
-    setIsEditing(true);
-    setEditBuffer(newNote);
-  };
+          // 導航與搜尋
+          const handleSearch = (query, target = 'cases') => {
+            setSearchQuery(query);
+            setActiveTab('search'); // 進入搜尋標籤
+            
+            if (!query.trim()) {
+              setSearchResults([]);
+              return;
+            }
+            const keywords = query.split(/\s+/).filter(k => k.length > 0); // 分割並移除空字串
+            
+            // 由於在搜尋頁面，我們同時對 cases 和 notes 進行搜尋
+            const caseResults = cases.filter(c => {
+                const text = (c.title + ' ' + c.content).toLowerCase();
+                return keywords.every(k => text.includes(k.toLowerCase()));
+            });
 
-  // --- Render Components ---
+            const noteResults = notes.filter(n => {
+                const text = (n.title + ' ' + n.content).toLowerCase();
+                return keywords.every(k => text.includes(k.toLowerCase()));
+            });
+            
+            // 將兩邊結果合併，並標註來源
+            const combinedResults = [
+                ...caseResults.map(c => ({...c, source: '醫案資料庫', sourceId: 'cases', id: `case-${c.id}`})),
+                ...noteResults.map(n => ({...n, source: '我的筆記', sourceId: 'notes', id: `note-${n.id}`}))
+            ];
+            
+            setSearchResults(combinedResults);
+          };
 
-  // 自定義 Modal 渲染
-  const ModalRenderer = () => {
-    if (!modalConfig) return null;
+          const openItem = (item, sourceName, mode = 'detail') => {
+            // 從 list 點擊開啟
+            let list, currentItem, context;
+            
+            if (sourceName === 'cases' || sourceName === 'random') {
+                list = cases;
+                currentItem = list.find(c => c.id === item.id);
+                context = 'cases';
+            } else if (sourceName === 'notes') {
+                list = notes;
+                currentItem = list.find(c => c.id === item.id);
+                context = 'notes';
+            } else if (sourceName === 'search') {
+                // 從搜尋結果點擊，需要判斷真正的來源
+                const trueSource = item.sourceId === 'notes' ? notes : cases;
+                list = trueSource;
+                currentItem = trueSource.find(c => c.id === item.id.replace(/(case|note)-/, ''));
+                context = item.sourceId; // 設置為 'cases' 或 'notes'
+                
+                // 為了正確導航，需要設定 navigationQueue 為原始列表
+                setNavigationQueue(list.map(c => c.id));
+                setCurrentId(currentItem?.id);
+                setContextSource(context);
+                setViewMode(mode);
+                setIsEditing(false);
+                return;
+            } else {
+                return; // 錯誤的來源名稱
+            }
+            
+            setNavigationQueue(list.map(c => c.id));
+            setCurrentId(item.id);
+            setContextSource(context);
+            setViewMode(mode);
+            setIsEditing(false);
+          };
 
-    const ModalBase = ({ title, children, footer }) => (
-      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-md flex flex-col animate-in fade-in zoom-in duration-200">
-          <div className="p-5 border-b dark:border-slate-700 flex justify-between items-center">
-            <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">{title}</h3>
-            <button onClick={() => setModalConfig(null)} className="p-1 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-full"><X size={20}/></button>
-          </div>
-          <div className="p-5 overflow-y-auto max-h-[60vh]">
-            {children}
-          </div>
-          <div className="p-4 border-t dark:border-slate-700 bg-gray-50 dark:bg-slate-900/50 rounded-b-xl flex justify-end gap-3">
-            {footer}
-          </div>
-        </div>
-      </div>
-    );
+          const navigateItem = (direction) => {
+            if (!currentId || navigationQueue.length === 0) return;
 
-    // 1. 匯入設定 Modal
-    if (modalConfig.type === 'import_settings') {
-      return (
-        <ModalBase 
-           title="匯入文字檔設定"
-           footer={
-             <>
-               <button onClick={() => setModalConfig(null)} className="px-4 py-2 rounded text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-700">取消</button>
-               <button onClick={executeTextImport} className="px-4 py-2 bg-amber-600 text-white rounded font-bold hover:bg-amber-700 shadow">開始匯入</button>
-             </>
-           }
-        >
-          <div className="space-y-4">
-            <div className="text-sm text-gray-500">準備匯入檔案：<span className="font-mono text-slate-800 dark:text-slate-200">{pendingFile?.name}</span></div>
-            
-            <div className="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-lg border border-amber-100 dark:border-amber-900/50">
-              <label className="block text-sm font-bold text-amber-800 dark:text-amber-400 mb-2">醫案分隔符號</label>
-              <input 
-                type="text" 
-                value={separatorInput}
-                onChange={(e) => setSeparatorInput(e.target.value)}
-                className="w-full p-2 border rounded font-mono text-center bg-white dark:bg-slate-900 dark:border-slate-700"
-                placeholder="例如: ---, ===, Next"
-              />
-              <p className="text-xs text-amber-700 dark:text-amber-500 mt-2">
-                * 系統將根據此符號將檔案切分為多則醫案。<br/>
-                * 若此檔案僅包含一則醫案，請留空。
-              </p>
-            </div>
-          </div>
-        </ModalBase>
-      );
-    }
+            if (isEditing) {
+              setModalConfig({ 
+                type: 'confirm_nav', 
+                onConfirm: () => {
+                  setIsEditing(false);
+                  setModalConfig(null);
+                  performNav(direction);
+                } 
+              });
+              return;
+            }
+            performNav(direction);
+          };
 
-    // 2. JSON 確認 Modal
-    if (modalConfig.type === 'json_confirm') {
-      return (
-         <ModalBase 
-            title="偵測到備份檔"
-            footer={
-              <>
-                <button onClick={() => setModalConfig(null)} className="px-4 py-2 rounded text-gray-600 dark:text-gray-300">取消</button>
-                <button onClick={() => executeJsonImport(modalConfig.data)} className="px-4 py-2 bg-emerald-600 text-white rounded font-bold shadow">合併匯入</button>
-              </>
-            }
-         >
-           <p>檔案 <b>{modalConfig.fileName}</b> 看起來是本系統的備份檔。</p>
-           <p className="mt-2">包含 <b>{modalConfig.data.length}</b> 筆資料。</p>
-           <p className="mt-2 text-sm text-gray-500">按下確認後，這些資料將會合併到您現有的資料庫中。</p>
-         </ModalBase>
-      );
-    }
+          const performNav = (direction) => {
+            const currentIndex = navigationQueue.indexOf(currentId);
+            if (currentIndex === -1) return;
+            let nextIndex = direction === 'next' 
+              ? (currentIndex + 1 < navigationQueue.length ? currentIndex + 1 : 0)
+              : (currentIndex - 1 >= 0 ? currentIndex - 1 : navigationQueue.length - 1);
+            setCurrentId(navigationQueue[nextIndex]);
+          };
 
-    // 3. 刪除確認
-    if (modalConfig.type === 'confirm_delete') {
-        return (
-            <ModalBase title="確認刪除" footer={
-                <>
-                   <button onClick={() => setModalConfig(null)} className="px-4 py-2 rounded bg-gray-200 dark:bg-slate-700">取消</button>
-                   <button onClick={modalConfig.onConfirm} className="px-4 py-2 bg-red-600 text-white rounded shadow">確認刪除</button>
-                </>
-            }>
-                <p className="text-red-500 font-bold flex items-center"><AlertCircle className="mr-2"/> 此操作無法復原</p>
-                <p className="mt-2">您確定要刪除這則資料嗎？</p>
-            </ModalBase>
-        );
-    }
+          const handleSaveEdit = () => {
+            const updater = (prev) => prev.map(c => c.id === currentId ? { ...c, ...editBuffer } : c);
+            if (contextSource === 'notes') setNotes(updater);
+            else setCases(updater);
+            
+            // 更新目前項目，確保標題更新
+            const updatedItem = (contextSource === 'notes' ? notes : cases).find(c => c.id === currentId);
+            if (updatedItem) {
+                updatedItem.title = editBuffer.title;
+                updatedItem.content = editBuffer.content;
+            }
 
-    // 4. 編輯儲存確認
-    if (modalConfig.type === 'confirm_save') {
-        return (
-            <ModalBase title="儲存變更" footer={
-                <>
-                   <button onClick={() => setModalConfig(null)} className="px-4 py-2 rounded bg-gray-200 dark:bg-slate-700">再編輯一下</button>
-                   <button onClick={handleSaveEdit} className="px-4 py-2 bg-amber-600 text-white rounded shadow">確認儲存</button>
-                </>
-            }>
-                <p>確定要儲存目前的修改嗎？</p>
-            </ModalBase>
-        );
-    }
+            setIsEditing(false);
+            setModalConfig(null);
+            showNotify('儲存成功');
+          };
 
-    // 5. 導航離開確認
-    if (modalConfig.type === 'confirm_nav') {
-        return (
-            <ModalBase title="放棄修改？" footer={
-                <>
-                   <button onClick={() => setModalConfig(null)} className="px-4 py-2 rounded bg-gray-200 dark:bg-slate-700">留在此頁</button>
-                   <button onClick={modalConfig.onConfirm} className="px-4 py-2 bg-red-500 text-white rounded shadow">放棄並離開</button>
-                </>
-            }>
-                <p>您正在編輯中，切換頁面將會導致未儲存的內容遺失。</p>
-            </ModalBase>
-        );
-    }
+          const handleDelete = () => {
+            setModalConfig({
+                type: 'confirm_delete',
+                onConfirm: () => {
+                    const listToDelete = contextSource === 'notes' ? notes : cases;
+                    const indexToDelete = listToDelete.findIndex(c => c.id === currentId);
+                    
+                    if(contextSource === 'notes') setNotes(prev => prev.filter(n => n.id !== currentId));
+                    else setCases(prev => prev.filter(c => c.id !== currentId));
+                    
+                    // 導航到下一個或上一個項目，如果還有
+                    if (navigationQueue.length > 1) {
+                        const nextIndex = indexToDelete % (navigationQueue.length - 1);
+                        const nextId = navigationQueue.filter(id => id !== currentId)[nextIndex];
+                        setCurrentId(nextId);
+                    } else {
+                        setViewMode('list');
+                        setCurrentId(null);
+                    }
 
-    return null;
-  };
+                    setModalConfig(null);
+                    showNotify('已刪除');
+                }
+            });
+          };
 
-  const DetailView = () => {
-    const list = activeTab === 'notes' ? notes : cases;
-    const item = list.find(c => c.id === currentId);
-    
-    if (!item) return <div>資料不存在</div>;
+          const createNote = () => {
+            const newNote = {
+              id: Date.now().toString(),
+              title: '新筆記',
+              content: '請在此輸入筆記內容...',
+              date: new Date().toISOString().split('T')[0]
+            };
+            
+            // 將新筆記放在最前面
+            const newNotesList = [newNote, ...notes];
+            setNotes(newNotesList);
+            
+            // 開啟新筆記並進入編輯模式
+            setCurrentId(newNote.id);
+            setNavigationQueue(newNotesList.map(c => c.id));
+            setContextSource('notes');
+            setViewMode('detail');
+            setIsEditing(true);
+            setEditBuffer(newNote);
+          };
 
-    return (
-      <div className="flex flex-col h-full bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
-        <div className="flex items-center justify-between p-3 border-b dark:border-slate-700 bg-amber-50 dark:bg-slate-800">
-          <button onClick={() => setViewMode('list')} className="p-2 rounded-full hover:bg-black/10 flex items-center">
-            <ChevronLeft size={20}/> <span className="ml-1 text-sm">返回列表</span>
-          </button>
-          <div className="flex gap-3">
-            {!isEditing ? (
-               <>
-                <button onClick={() => { navigator.clipboard.writeText(item.content); showNotify('已複製內文'); }} className="p-2 hover:bg-black/10 rounded-full"><Copy size={20}/></button>
-                <button onClick={() => { setEditBuffer(item); setIsEditing(true); }} className="p-2 hover:bg-black/10 rounded-full"><Edit3 size={20}/></button>
-                <button onClick={handleDelete} className="p-2 text-red-500 hover:bg-red-100 rounded-full"><Trash2 size={20}/></button>
-               </>
-            ) : null}
-          </div>
-        </div>
+          // --- Render Components ---
 
-        <div className="flex-1 overflow-y-auto p-4" style={{ fontSize: `${fontSize}px` }}>
-          {isEditing ? (
-            <div className="flex flex-col gap-3 h-full">
-               <input 
-                 value={editBuffer.title} 
-                 onChange={e => setEditBuffer({...editBuffer, title: e.target.value})}
-                 className="text-xl font-bold p-2 border rounded dark:bg-slate-800 dark:border-slate-600"
-                 placeholder="標題"
-               />
-               <textarea 
-                 value={editBuffer.content}
-                 onChange={e => setEditBuffer({...editBuffer, content: e.target.value})}
-                 className="flex-1 p-2 border rounded resize-none dark:bg-slate-800 dark:border-slate-600 font-mono leading-relaxed"
-                 placeholder="內文..."
-               />
-               <div className="flex justify-end gap-3 pb-2">
-                  <button onClick={() => setIsEditing(false)} className="px-4 py-2 rounded bg-gray-200 dark:bg-slate-700">取消</button>
-                  <button onClick={() => setModalConfig({ type: 'confirm_save' })} className="px-4 py-2 rounded bg-amber-600 text-white font-bold">儲存</button>
-               </div>
-            </div>
-          ) : (
-            <>
-              <h2 className="text-2xl font-bold mb-2 text-amber-800 dark:text-amber-400 select-text">{item.title}</h2>
-              <p className="text-xs text-gray-400 mb-4 border-b pb-2 select-none">{item.date}</p>
-              <div className="whitespace-pre-wrap leading-relaxed select-text">{item.content}</div>
-            </>
-          )}
-        </div>
+          // 自定義 Modal 渲染
+          const ModalRenderer = () => {
+            if (!modalConfig) return null;
 
-        {!isEditing && (
-          <div className="p-3 border-t dark:border-slate-700 flex justify-between bg-gray-50 dark:bg-slate-800 select-none">
-            <button onClick={() => navigateItem('prev')} className="flex items-center px-4 py-3 bg-white dark:bg-slate-700 rounded shadow text-sm active:scale-95 transition-transform">
-              <ChevronLeft size={16}/> 上一則
-            </button>
-            <div className="text-xs self-center opacity-50">{navigationQueue.indexOf(currentId)+1} / {navigationQueue.length}</div>
-            <button onClick={() => navigateItem('next')} className="flex items-center px-4 py-3 bg-white dark:bg-slate-700 rounded shadow text-sm active:scale-95 transition-transform">
-              下一則 <ChevronRight size={16}/>
-            </button>
-          </div>
-        )}
-      </div>
-    );
-  };
+            const ModalBase = ({ title, children, footer }) => (
+              <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+                <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-md flex flex-col animate-in fade-in zoom-in duration-200">
+                  <div className="p-5 border-b dark:border-slate-700 flex justify-between items-center">
+                    <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">{title}</h3>
+                    <button onClick={() => setModalConfig(null)} className="p-1 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-full text-slate-900 dark:text-slate-100"><X size={20}/></button>
+                  </div>
+                  <div className="p-5 overflow-y-auto max-h-[60vh] text-slate-900 dark:text-slate-100">
+                    {children}
+                  </div>
+                  <div className="p-4 border-t dark:border-slate-700 bg-gray-50 dark:bg-slate-900/50 rounded-b-xl flex justify-end gap-3">
+                    {footer}
+                  </div>
+                </div>
+              </div>
+            );
 
-  const ListRenderer = ({ data, type }) => (
-    <div className="p-4 space-y-3 pb-20">
-      {data.length === 0 && <div className="text-center text-gray-400 mt-10">暫無資料</div>}
-      {data.map(item => (
-        <div 
-          key={item.id} 
-          onClick={() => openItem(item.id, data, type)}
-          className="bg-white dark:bg-slate-800 p-4 rounded-lg shadow-sm border-l-4 border-transparent hover:border-amber-500 cursor-pointer active:bg-gray-50 dark:active:bg-slate-700"
-        >
-          <div className="font-bold text-lg text-slate-800 dark:text-slate-200 truncate">{item.title}</div>
-          <div className="text-gray-500 text-sm line-clamp-2 mt-1">{item.content}</div>
-        </div>
-      ))}
-    </div>
-  );
+            // 1. 匯入設定 Modal
+            if (modalConfig.type === 'import_settings') {
+              return (
+                <ModalBase 
+                    title="匯入文字檔設定"
+                    footer={
+                      <>
+                        <button onClick={() => setModalConfig(null)} className="px-4 py-2 rounded text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-700">取消</button>
+                        <button onClick={executeTextImport} className="px-4 py-2 bg-amber-600 text-white rounded font-bold hover:bg-amber-700 shadow">開始匯入</button>
+                      </>
+                    }
+                >
+                  <div className="space-y-4">
+                    <div className="text-sm text-gray-500">準備匯入檔案：<span className="font-mono text-slate-800 dark:text-slate-200">{pendingFile?.name}</span></div>
+                    
+                    <div className="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-lg border border-amber-100 dark:border-amber-900/50">
+                      <label className="block text-sm font-bold text-amber-800 dark:text-amber-400 mb-2">醫案分隔符號</label>
+                      <input 
+                        type="text" 
+                        value={separatorInput}
+                        onChange={(e) => setSeparatorInput(e.target.value)}
+                        className="w-full p-2 border rounded font-mono text-center bg-white dark:bg-slate-900 dark:border-slate-700 text-slate-900 dark:text-slate-100"
+                        placeholder="例如: ===, ---, Next"
+                      />
+                      <p className="text-xs text-amber-700 dark:text-amber-500 mt-2">
+                        * 系統將根據此符號將檔案切分為多則醫案。<br/>
+                        * 若此檔案僅包含一則醫案，請留空。
+                      </p>
+                    </div>
+                  </div>
+                </ModalBase>
+              );
+            }
 
-  return (
-    <div className={`flex flex-col h-screen w-full font-sans ${darkMode ? 'dark' : ''} bg-gray-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100`}>
-      
-      {/* 全局 Notification */}
-      {notification && (
-        <div className={`fixed top-4 left-1/2 -translate-x-1/2 z-[110] px-6 py-3 rounded-full shadow-lg text-white text-sm font-bold flex items-center animate-in slide-in-from-top-5 fade-in duration-300 ${notification.type === 'error' ? 'bg-red-500' : 'bg-emerald-600'}`}>
-           {notification.type === 'success' ? <Check size={18} className="mr-2"/> : <AlertCircle size={18} className="mr-2"/>}
-           {notification.msg}
-        </div>
-      )}
+            // 2. JSON 確認 Modal
+            if (modalConfig.type === 'json_confirm') {
+              return (
+                   <ModalBase 
+                     title="偵測到備份檔"
+                     footer={
+                       <>
+                         <button onClick={() => setModalConfig(null)} className="px-4 py-2 rounded text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-700">取消</button>
+                         <button onClick={() => executeJsonImport(modalConfig.data)} className="px-4 py-2 bg-emerald-600 text-white rounded font-bold shadow hover:bg-emerald-700">合併匯入</button>
+                       </>
+                     }
+                   >
+                    <p>檔案 <b>{modalConfig.fileName}</b> 看起來是本系統的備份檔。</p>
+                    <p className="mt-2">包含 <b>{modalConfig.data.length}</b> 筆資料。</p>
+                    <p className="mt-2 text-sm text-gray-500">按下確認後，這些資料將會合併到您現有的資料庫中。</p>
+                   </ModalBase>
+              );
+            }
 
-      {/* 全局 Modal */}
-      <ModalRenderer />
+            // 3. 刪除確認
+            if (modalConfig.type === 'confirm_delete') {
+                return (
+                    <ModalBase title="確認刪除" footer={
+                        <>
+                           <button onClick={() => setModalConfig(null)} className="px-4 py-2 rounded bg-gray-200 dark:bg-slate-700 hover:bg-gray-300 dark:hover:bg-slate-600">取消</button>
+                           <button onClick={modalConfig.onConfirm} className="px-4 py-2 bg-red-600 text-white rounded shadow hover:bg-red-700">確認刪除</button>
+                        </>
+                    }>
+                        <p className="text-red-500 font-bold flex items-center"><AlertCircle size={20} className="mr-2"/> 此操作無法復原</p>
+                        <p className="mt-2">您確定要刪除這則資料嗎？</p>
+                    </ModalBase>
+                );
+            }
 
-      {viewMode === 'detail' ? (
-        <DetailView />
-      ) : (
-        <div className="flex-1 overflow-hidden flex flex-col relative">
-          
-          {/* Header Area */}
-          {activeTab === 'cases' && <div className="p-4 bg-amber-600 text-white font-bold shadow select-none">醫案資料庫 ({cases.length})</div>}
-          {activeTab === 'notes' && (
-            <div className="p-4 bg-emerald-600 text-white font-bold shadow flex justify-between items-center select-none">
-              <span>我的筆記 ({notes.length})</span>
-              <button onClick={createNote} className="bg-white/20 p-1 rounded hover:bg-white/30"><Plus size={20}/></button>
-            </div>
-          )}
-          {activeTab === 'search' && (
-            <div className="p-3 bg-white dark:bg-slate-800 shadow z-10">
-               <div className="flex gap-2 mb-2 select-none">
-                  <button onClick={() => handleSearch(searchQuery, 'cases')} className={`flex-1 text-xs py-1 rounded ${activeTab==='notes' ? 'bg-gray-200 text-gray-500' : 'bg-amber-100 text-amber-800'}`}>搜醫案</button>
-                  <button onClick={() => handleSearch(searchQuery, 'notes')} className={`flex-1 text-xs py-1 rounded ${activeTab==='notes' ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-200 text-gray-500'}`}>搜筆記</button>
-               </div>
-               <div className="relative">
-                 <Search className="absolute left-3 top-2.5 text-gray-400" size={18}/>
-                 <input 
-                   type="text" 
-                   placeholder="輸入關鍵字..." 
-                   value={searchQuery}
-                   onChange={(e) => handleSearch(e.target.value, activeTab === 'notes' ? 'notes' : 'cases')}
-                   className="w-full pl-10 pr-4 py-2 rounded border bg-gray-50 dark:bg-slate-700 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-amber-500"
-                 />
-               </div>
-            </div>
-          )}
+            // 4. 編輯儲存確認
+            if (modalConfig.type === 'confirm_save') {
+                return (
+                    <ModalBase title="儲存變更" footer={
+                        <>
+                           <button onClick={() => setModalConfig(null)} className="px-4 py-2 rounded bg-gray-200 dark:bg-slate-700 hover:bg-gray-300 dark:hover:bg-slate-600">再編輯一下</button>
+                           <button onClick={handleSaveEdit} className="px-4 py-2 bg-amber-600 text-white rounded shadow hover:bg-amber-700">確認儲存</button>
+                        </>
+                    }>
+                        <p>確定要儲存目前的修改嗎？</p>
+                    </ModalBase>
+                );
+            }
 
-          {/* Main Content Area */}
-          <div className="flex-1 overflow-y-auto">
-             {activeTab === 'random' && (
-               <div className="h-full flex flex-col items-center justify-center p-8 select-none">
-                 <Shuffle size={64} className="text-amber-500 mb-6"/>
-                 <button 
-                   onClick={() => {
-                     if(cases.length===0) return showNotify('無資料', 'error');
-                     const rnd = cases[Math.floor(Math.random()*cases.length)];
-                     openItem(rnd.id, cases, 'random');
-                   }}
-                   className="px-8 py-3 bg-amber-600 text-white rounded-lg text-xl shadow-lg active:scale-95 transition-transform"
-                 >隨機抽一則</button>
-               </div>
-             )}
+            // 5. 導航離開確認
+            if (modalConfig.type === 'confirm_nav') {
+                return (
+                    <ModalBase title="放棄修改？" footer={
+                        <>
+                           <button onClick={() => setModalConfig(null)} className="px-4 py-2 rounded bg-gray-200 dark:bg-slate-700 hover:bg-gray-300 dark:hover:bg-slate-600">留在此頁</button>
+                           <button onClick={modalConfig.onConfirm} className="px-4 py-2 bg-red-500 text-white rounded shadow hover:bg-red-600">放棄並離開</button>
+                        </>
+                    }>
+                        <p>您正在編輯中，切換頁面將會導致未儲存的內容遺失。</p>
+                    </ModalBase>
+                );
+            }
 
-             {activeTab === 'cases' && <ListRenderer data={cases} type="database" />}
-             {activeTab === 'notes' && <ListRenderer data={notes} type="notes" />}
-             {activeTab === 'search' && <ListRenderer data={searchResults} type="search" />}
-             
-             {activeTab === 'settings' && (
-                <div className="p-6 space-y-6 select-none">
-                  <h2 className="text-xl font-bold border-b pb-2 dark:border-slate-700">設定</h2>
-                  
-                  <div className="bg-white dark:bg-slate-800 p-4 rounded-lg shadow-sm">
-                    <div className="flex justify-between items-center mb-4">
-                      <span>深色模式</span>
-                      <button onClick={() => setDarkMode(!darkMode)} className={`w-10 h-5 rounded-full relative ${darkMode?'bg-amber-600':'bg-gray-300'}`}>
-                        <span className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${darkMode?'left-6':'left-1'}`}/>
-                      </button>
-                    </div>
-                    <div>
-                      <div className="flex justify-between text-sm mb-1"><span>字體大小</span><span>{fontSize}px</span></div>
-                      <input type="range" min="14" max="30" value={fontSize} onChange={e=>setFontSize(Number(e.target.value))} className="w-full accent-amber-600"/>
-                    </div>
-                  </div>
+            return null;
+          };
 
-                  <div className="bg-white dark:bg-slate-800 p-4 rounded-lg space-y-3 shadow-sm">
-                    <div onClick={() => fileInputRef.current.click()} className="block w-full p-3 border-2 border-dashed border-amber-300 rounded-lg text-center cursor-pointer hover:bg-amber-50 dark:hover:bg-slate-700/50 transition-colors">
-                       <Upload className="mx-auto mb-1 text-amber-600"/>
-                       <span className="font-bold text-amber-700 dark:text-amber-400">匯入醫案 (TXT/JSON)</span>
-                       <div className="text-xs text-gray-500 mt-1">支援批次切割・自動偵測格式</div>
-                       <input ref={fileInputRef} type="file" accept=".txt,.json" className="hidden" onChange={handleFileSelect} />
-                    </div>
-                    <button onClick={() => {
-                       const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(cases));
-                       const a = document.createElement('a'); a.href = dataStr; a.download = "medical_cases_backup.json"; a.click();
-                       showNotify('已下載備份檔');
-                    }} className="w-full py-3 bg-gray-100 dark:bg-slate-700 rounded flex justify-center items-center hover:bg-gray-200 dark:hover:bg-slate-600">
-                       <Download size={18} className="mr-2"/> 備份醫案資料庫
-                    </button>
-                  </div>
-                  
-                  <div className="text-center text-xs text-gray-400 mt-4">
-                    V3.0 - Enhanced Import UI
-                  </div>
-                </div>
-             )}
-          </div>
-        </div>
-      )}
+          const DetailView = () => {
+            const list = contextSource === 'notes' ? notes : cases;
+            const item = list.find(c => c.id === currentId);
+            
+            // 如果從搜尋結果點擊後，項目被刪除，可能會找不到
+            if (!item) {
+                return (
+                    <div className="flex flex-col h-full items-center justify-center p-4">
+                        <p className="text-xl text-red-500 mb-4">找不到資料</p>
+                        <button onClick={() => setViewMode('list')} className="px-4 py-2 bg-amber-600 text-white rounded">返回列表</button>
+                    </div>
+                );
+            }
 
-      {/* Bottom Nav */}
-      <div className="bg-white dark:bg-slate-900 border-t dark:border-slate-800 h-16 flex justify-around items-center shrink-0 z-50 shadow-[0_-2px_10px_rgba(0,0,0,0.05)] select-none">
-        {[
-          { id: 'random', icon: Shuffle, label: '隨機' },
-          { id: 'cases', icon: BookOpen, label: '醫案' },
-          { id: 'search', icon: Search, label: '搜尋' },
-          { id: 'notes', icon: FileText, label: '筆記' },
-          { id: 'settings', icon: Settings, label: '設定' },
-        ].map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => { setActiveTab(tab.id); setViewMode('list'); }}
-            className={`flex flex-col items-center justify-center w-full h-full ${activeTab===tab.id ? 'text-amber-600 dark:text-amber-400' : 'text-gray-400'}`}
-          >
-            <tab.icon size={24} strokeWidth={activeTab===tab.id?2.5:2}/>
-            <span className="text-[10px] font-medium mt-1">{tab.label}</span>
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
+            // 如果在編輯模式下，緩衝區中沒有資料，則從 item 載入
+            useEffect(() => {
+                if (isEditing && !editBuffer.id) {
+                    setEditBuffer(item);
+                }
+            }, [isEditing, item]);
+
+
+            // 過濾掉當前項目，並計算在當前列表中的索引
+            const currentList = contextSource === 'notes' ? notes : cases;
+            const currentNavigationQueue = currentList.map(c => c.id);
+            const currentIndex = currentNavigationQueue.indexOf(currentId);
+
+
+            return (
+              <div className="flex flex-col h-full bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+                <div className="flex items-center justify-between p-3 border-b dark:border-slate-700 bg-amber-50 dark:bg-slate-800 shrink-0">
+                  <button onClick={() => { 
+                      if (isEditing) {
+                          setModalConfig({ 
+                              type: 'confirm_nav', 
+                              onConfirm: () => {
+                                  setIsEditing(false);
+                                  setModalConfig(null);
+                                  setViewMode('list');
+                              } 
+                          });
+                      } else {
+                          setViewMode('list');
+                      }
+                  }} className="p-2 rounded-full hover:bg-black/10 flex items-center">
+                    <ChevronLeft size={20}/> <span className="ml-1 text-sm">返回列表</span>
+                  </button>
+                  <div className="flex gap-3">
+                    {!isEditing ? (
+                        <>
+                         <button onClick={() => { navigator.clipboard.writeText(item.content); showNotify('已複製內文'); }} className="p-2 hover:bg-black/10 rounded-full"><Copy size={20}/></button>
+                         <button onClick={() => { setEditBuffer(item); setIsEditing(true); }} className="p-2 hover:bg-black/10 rounded-full"><Edit3 size={20}/></button>
+                         <button onClick={handleDelete} className="p-2 text-red-500 hover:bg-red-100 rounded-full"><Trash2 size={20}/></button>
+                        </>
+                    ) : (
+                        // 編輯模式下的按鈕
+                        <>
+                            <button onClick={() => { 
+                                setIsEditing(false); 
+                                setEditBuffer({});
+                            }} className="px-3 py-1 rounded bg-gray-200 dark:bg-slate-700">取消</button>
+                            <button onClick={() => setModalConfig({ type: 'confirm_save' })} className="px-3 py-1 rounded bg-amber-600 text-white font-bold flex items-center"><Check size={18} className="mr-1"/> 儲存</button>
+                        </>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex-1 overflow-y-auto p-4" style={{ fontSize: `${fontSize}px` }}>
+                  {isEditing ? (
+                    <div className="flex flex-col gap-3 h-full">
+                       <input 
+                         value={editBuffer.title} 
+                         onChange={e => setEditBuffer({...editBuffer, title: e.target.value})}
+                         className="text-xl font-bold p-2 border rounded dark:bg-slate-800 dark:border-slate-600 text-slate-900 dark:text-slate-100 placeholder-slate-400"
+                         placeholder="標題"
+                       />
+                       <textarea 
+                         value={editBuffer.content}
+                         onChange={e => setEditBuffer({...editBuffer, content: e.target.value})}
+                         className="flex-1 p-2 border rounded resize-none dark:bg-slate-800 dark:border-slate-600 font-mono leading-relaxed text-slate-900 dark:text-slate-100 placeholder-slate-400"
+                         placeholder="內文..."
+                       />
+                    </div>
+                  ) : (
+                    <>
+                      <h2 className="text-2xl font-bold mb-2 text-amber-800 dark:text-amber-400 select-text">{item.title}</h2>
+                      <p className="text-xs text-gray-400 mb-4 border-b pb-2 select-none">{item.date} {contextSource === 'notes' ? '(筆記)' : '(醫案)'}</p>
+                      <div className="whitespace-pre-wrap leading-relaxed select-text">{item.content}</div>
+                    </>
+                  )}
+                </div>
+
+                {!isEditing && (
+                  <div className="p-3 border-t dark:border-slate-700 flex justify-between bg-gray-50 dark:bg-slate-800 select-none shrink-0">
+                    <button onClick={() => navigateItem('prev')} className="flex items-center px-4 py-3 bg-white dark:bg-slate-700 rounded shadow text-sm active:scale-95 transition-transform hover:bg-gray-100 dark:hover:bg-slate-600 disabled:opacity-50" disabled={currentNavigationQueue.length <= 1}>
+                      <ChevronLeft size={16}/> 上一則
+                    </button>
+                    <div className="text-xs self-center opacity-70">
+                        {currentNavigationQueue.length > 0 ? `${currentIndex + 1} / ${currentNavigationQueue.length}` : '無資料'}
+                    </div>
+                    <button onClick={() => navigateItem('next')} className="flex items-center px-4 py-3 bg-white dark:bg-slate-700 rounded shadow text-sm active:scale-95 transition-transform hover:bg-gray-100 dark:hover:bg-slate-600 disabled:opacity-50" disabled={currentNavigationQueue.length <= 1}>
+                      下一則 <ChevronRight size={16}/>
+                    </button>
+                  </div>
+                )}
+              </div>
+            );
+          };
+
+          const ListRenderer = ({ data, type }) => (
+            <div className="p-4 space-y-3 pb-20">
+              {data.length === 0 && <div className="text-center text-gray-400 mt-10">
+                {type === 'search' ? '找不到相關結果' : '暫無資料'}
+              </div>}
+              {data.map(item => (
+                <div 
+                  key={item.id} 
+                  // 傳遞整個 item 物件
+                  onClick={() => openItem(item, type)}
+                  className="bg-white dark:bg-slate-800 p-4 rounded-lg shadow-sm border-l-4 border-transparent hover:border-amber-500 cursor-pointer active:bg-gray-50 dark:active:bg-slate-700 transition-colors"
+                >
+                  <div className="font-bold text-lg text-slate-800 dark:text-slate-200 truncate">{item.title}</div>
+                  {type === 'search' && <div className="text-xs text-amber-600 dark:text-amber-400 mt-1">{item.source}</div>}
+                  <div className="text-gray-500 text-sm line-clamp-2 mt-1">{item.content}</div>
+                </div>
+              ))}
+            </div>
+          );
+
+          return (
+            <div className={`flex flex-col h-screen w-full font-sans ${darkMode ? 'dark' : ''} bg-gray-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100`}>
+              
+              {/* 全局 Notification */}
+              {notification && (
+                <div className={`fixed top-4 left-1/2 -translate-x-1/2 z-[110] px-6 py-3 rounded-full shadow-lg text-white text-sm font-bold flex items-center animate-in slide-in-from-top-5 fade-in duration-300 transition-opacity ${notification.type === 'error' ? 'bg-red-500' : 'bg-emerald-600'}`}>
+                    {notification.type === 'success' ? <Check size={18} className="mr-2"/> : <AlertCircle size={18} className="mr-2"/>}
+                    {notification.msg}
+                </div>
+              )}
+
+              {/* 全局 Modal */}
+              <ModalRenderer />
+
+              {viewMode === 'detail' ? (
+                <DetailView />
+              ) : (
+                <div className="flex-1 overflow-hidden flex flex-col relative">
+                  
+                  {/* Header Area */}
+                  {activeTab === 'cases' && <div className="p-4 bg-amber-600 text-white font-bold shadow select-none shrink-0">醫案資料庫 ({cases.length})</div>}
+                  {activeTab === 'notes' && (
+                    <div className="p-4 bg-emerald-600 text-white font-bold shadow flex justify-between items-center select-none shrink-0">
+                      <span>我的筆記 ({notes.length})</span>
+                      <button onClick={createNote} className="bg-white/20 p-1 rounded hover:bg-white/30"><Plus size={20}/></button>
+                    </div>
+                  )}
+                  {activeTab === 'search' && (
+                    <div className="p-3 bg-white dark:bg-slate-800 shadow z-10 shrink-0">
+                      <div className="relative">
+                       <Search className="absolute left-3 top-2.5 text-gray-400" size={18}/>
+                       <input 
+                          type="text" 
+                          placeholder="輸入關鍵字..." 
+                          value={searchQuery}
+                          onChange={(e) => handleSearch(e.target.value)}
+                          className="w-full pl-10 pr-4 py-2 rounded border bg-gray-50 dark:bg-slate-700 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-amber-500 text-slate-900 dark:text-slate-100"
+                        />
+                      </div>
+                      <p className="text-xs text-gray-500 mt-2">搜尋結果: {searchResults.length} 筆</p>
+                    </div>
+                  )}
+                  {activeTab === 'settings' && <div className="p-4 bg-gray-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 font-bold shadow select-none shrink-0">設定與管理</div>}
+                  {activeTab === 'random' && <div className="p-4 bg-amber-50 dark:bg-slate-800 text-amber-800 dark:text-amber-400 font-bold shadow select-none shrink-0">隨機抽題</div>}
+
+
+                  {/* Main Content Area */}
+                  <div className="flex-1 overflow-y-auto">
+                      {activeTab === 'random' && (
+                          <div className="h-full flex flex-col items-center justify-center p-8 select-none">
+                            <Shuffle size={64} className="text-amber-500 mb-6"/>
+                            <button 
+                              onClick={() => {
+                                 if(cases.length===0) return showNotify('醫案資料庫無資料', 'error');
+                                 const rnd = cases[Math.floor(Math.random()*cases.length)];
+                                 openItem(rnd, 'random');
+                              }}
+                              className="px-8 py-3 bg-amber-600 text-white rounded-lg text-xl shadow-lg active:scale-95 transition-transform hover:bg-amber-700"
+                              disabled={cases.length === 0}
+                            >隨機抽一則醫案</button>
+                            {cases.length === 0 && <p className="text-red-500 text-sm mt-3">請先匯入醫案</p>}
+                          </div>
+                      )}
+
+                      {activeTab === 'cases' && <ListRenderer data={cases} type="cases" />}
+                      {activeTab === 'notes' && <ListRenderer data={notes} type="notes" />}
+                      {activeTab === 'search' && <ListRenderer data={searchResults} type="search" />}
+                      
+                      {activeTab === 'settings' && (
+                          <div className="p-6 space-y-6 select-none">
+                            <h2 className="text-xl font-bold border-b pb-2 dark:border-slate-700">介面設定</h2>
+                            
+                            <div className="bg-white dark:bg-slate-800 p-4 rounded-lg shadow-sm">
+                              <div className="flex justify-between items-center mb-4">
+                                <span>深色模式</span>
+                                <button onClick={() => setDarkMode(!darkMode)} className={`w-10 h-5 rounded-full relative ${darkMode?'bg-amber-600':'bg-gray-300'}`}>
+                                  <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all duration-300 ${darkMode?'left-5':'left-0.5'}`}/>
+                                </button>
+                              </div>
+                              <div>
+                                <div className="flex justify-between text-sm mb-1"><span>字體大小</span><span>{fontSize}px</span></div>
+                                <input type="range" min="14" max="30" step="1" value={fontSize} onChange={e=>setFontSize(Number(e.target.value))} className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer range-lg dark:bg-gray-700 accent-amber-600"/>
+                              </div>
+                            </div>
+
+                            <h2 className="text-xl font-bold border-b pb-2 dark:border-slate-700">資料管理</h2>
+                            <div className="bg-white dark:bg-slate-800 p-4 rounded-lg space-y-3 shadow-sm">
+                              <div onClick={() => fileInputRef.current.click()} className="block w-full p-3 border-2 border-dashed border-amber-300 rounded-lg text-center cursor-pointer hover:bg-amber-50 dark:hover:bg-slate-700/50 transition-colors">
+                                 <Upload size={24} className="mx-auto mb-1 text-amber-600"/>
+                                 <span className="font-bold text-amber-700 dark:text-amber-400">匯入醫案 (TXT/JSON)</span>
+                                 <div className="text-xs text-gray-500 mt-1">支援批次切割・自動偵測格式</div>
+                                 <input ref={fileInputRef} type="file" accept=".txt,.json" className="hidden" onChange={handleFileSelect} />
+                              </div>
+                              <button onClick={() => {
+                                 const backupData = { cases, notes }; // 可選：備份 notes
+                                 const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData.cases, null, 2));
+                                 const a = document.createElement('a'); a.href = dataStr; a.download = `tcm_cases_backup_${new Date().toISOString().split('T')[0]}.json`; a.click();
+                                 showNotify('已下載醫案備份檔');
+                              }} className="w-full py-3 bg-gray-100 dark:bg-slate-700 rounded flex justify-center items-center hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors">
+                                 <Download size={18} className="mr-2"/> 備份醫案資料庫 (JSON)
+                              </button>
+                            </div>
+                            
+                            <div className="text-center text-xs text-gray-400 mt-4">
+                                V3.1 - Enhanced for HTML Preview
+                            </div>
+                          </div>
+                      )}
+                  </div>
+                </div>
+              )}
+
+              {/* Bottom Nav */}
+              <div className="bg-white dark:bg-slate-900 border-t dark:border-slate-800 h-16 flex justify-around items-center shrink-0 z-50 shadow-[0_-2px_10px_rgba(0,0,0,0.05)] select-none">
+                {[
+                  { id: 'random', icon: Shuffle, label: '隨機' },
+                  { id: 'cases', icon: BookOpen, label: '醫案' },
+                  { id: 'search', icon: Search, label: '搜尋' },
+                  { id: 'notes', icon: FileText, label: '筆記' },
+                  { id: 'settings', icon: Settings, label: '設定' },
+                ].map(tab => (
+                  <button
+                    key={tab.id}
+                    onClick={() => { 
+                        // 如果從編輯模式切換，需要確認
+                        if (isEditing) {
+                            setModalConfig({ 
+                                type: 'confirm_nav', 
+                                onConfirm: () => {
+                                    setIsEditing(false);
+                                    setEditBuffer({});
+                                    setModalConfig(null);
+                                    setActiveTab(tab.id); 
+                                    setViewMode('list'); 
+                                } 
+                            });
+                            return;
+                        }
+                        setActiveTab(tab.id); 
+                        setViewMode('list'); 
+                        if(tab.id === 'search' && searchQuery) {
+                           handleSearch(searchQuery); // 進入搜尋時保持上次搜尋結果
+                        }
+                    }}
+                    className={`flex flex-col items-center justify-center w-full h-full ${activeTab===tab.id ? 'text-amber-600 dark:text-amber-400' : 'text-gray-400'}`}
+                  >
+                    <tab.icon size={24} strokeWidth={activeTab===tab.id?2.5:2}/>
+                    <span className="text-[10px] font-medium mt-1">{tab.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          );
+        }
+        
+        // 渲染 App
+        ReactDOM.render(<App />, document.getElementById('root'));
+
+    </script>
+</body>
+</html>
