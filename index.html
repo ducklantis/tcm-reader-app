@@ -17,7 +17,8 @@ import {
   Edit3,
   Check,
   AlertCircle,
-  X
+  X,
+  FilePlus 
 } from 'lucide-react';
 
 // --- 初始資料 ---
@@ -262,6 +263,24 @@ export default function App() {
     setIsEditing(true);
     setEditBuffer(newNote);
   };
+  
+  // 4. 轉存筆記核心功能
+  const transferToNote = (item) => {
+      const newNote = {
+          id: Date.now().toString(),
+          title: `來自醫案: ${item.title}`,
+          content: `【原醫案內容】\n${item.content}\n\n【我的註解】\n`,
+          date: new Date().toISOString().split('T')[0]
+      };
+      setNotes(prev => [newNote, ...prev]);
+      showNotify(`已將醫案轉存至筆記本`, 'success');
+      
+      // 切換到筆記分頁並打開剛新增的筆記
+      setActiveTab('notes');
+      openItem(newNote.id, [newNote, ...notes], 'notes', 'detail');
+      setIsEditing(true);
+      setEditBuffer(newNote);
+  };
 
   // --- Render Components ---
 
@@ -391,6 +410,9 @@ export default function App() {
     
     if (!item) return <div>資料不存在</div>;
 
+    // 判斷是否為醫案庫內容，醫案庫內容才顯示轉存按鈕
+    const isCase = cases.some(c => c.id === currentId);
+
     return (
       <div className="flex flex-col h-full bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">
         <div className="flex items-center justify-between p-3 border-b dark:border-slate-700 bg-amber-50 dark:bg-slate-800">
@@ -400,6 +422,11 @@ export default function App() {
           <div className="flex gap-3">
             {!isEditing ? (
                <>
+                {isCase && (
+                  <button onClick={() => transferToNote(item)} className="flex items-center gap-1 px-3 py-1 bg-emerald-600 text-white rounded-full text-sm font-bold shadow hover:shadow-md transition-all">
+                    <FilePlus size={16}/> 轉存筆記
+                  </button>
+                )}
                 <button onClick={() => { navigator.clipboard.writeText(item.content); showNotify('已複製內文'); }} className="p-2 hover:bg-black/10 rounded-full"><Copy size={20}/></button>
                 <button onClick={() => { setEditBuffer(item); setIsEditing(true); }} className="p-2 hover:bg-black/10 rounded-full"><Edit3 size={20}/></button>
                 <button onClick={handleDelete} className="p-2 text-red-500 hover:bg-red-100 rounded-full"><Trash2 size={20}/></button>
