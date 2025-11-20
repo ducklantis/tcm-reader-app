@@ -153,7 +153,7 @@
           
           // 匯入專用狀態
           const [pendingFile, setPendingFile] = useState(null);
-          const [separatorInput, setSeparatorInput] = useState('===');
+          const [separatorInput, setSeparatorInput] = useState('---');
           const fileInputRef = useRef(null);
 
           // --- Effects ---
@@ -208,7 +208,7 @@
 
               // 是一般文字檔，開啟匯入設定視窗
               setPendingFile({ name: file.name, content });
-              setSeparatorInput('==='); // 重置預設值
+              setSeparatorInput('---'); // 重置預設值
               setModalConfig({ type: 'import_settings' });
             };
             reader.readAsText(file);
